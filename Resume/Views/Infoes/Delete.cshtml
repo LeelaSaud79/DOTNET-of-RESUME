@@ -1,0 +1,75 @@
+﻿@model Resume.Models.Info
+
+@{
+    ViewData["Title"] = "Delete";
+}
+
+<h1>Delete</h1>
+
+<h3>Are you sure you want to delete this?</h3>
+<div>
+    <h4>Info</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.name)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.name)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.password)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.password)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.github_link)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.github_link)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.address)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.address)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.email)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.email)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.phone)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.phone)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.social_media_link)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.social_media_link)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.summary)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.summary)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.designation)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.designation)
+        </dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="info_id" />
+        <input type="submit" value="Delete" class="btn btn-danger" /> |
+        <a asp-action="Index">Back to List</a>
+    </form>
+</div>

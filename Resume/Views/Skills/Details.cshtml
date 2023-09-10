@@ -1,0 +1,30 @@
+﻿@model Resume.Models.Skills
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Skills</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.info_id)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.info_id)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.skill)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.skill)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.skill_id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

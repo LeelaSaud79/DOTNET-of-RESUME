@@ -1,0 +1,54 @@
+﻿@model Resume.Models.References
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>References</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.info_id)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.info_id)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.reference_by)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.reference_by)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.company)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.company)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.email)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.email)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.phone_number)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.phone_number)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.designation)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.designation)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.ref_id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
