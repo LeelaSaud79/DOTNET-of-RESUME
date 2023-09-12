@@ -48,15 +48,15 @@ namespace Resume.APIController
           {
               return NotFound();
           }
-            var skills = await _context.Skills.FindAsync(id);
+            var skills = await _context.Skills.Where(c => c.info_id == id).ToListAsync();
 
             if (skills == null)
             {
                 return NotFound();
             }
-            var returnuser = _mapper.Map<SkillsReadDTOs>(skills);
+            var returnuser = _mapper.Map<List<SkillsReadDTOs>>(skills);
 
-            return returnuser;
+            return Ok(returnuser);
         }
 
         // PUT: api/Skills/5
@@ -64,11 +64,8 @@ namespace Resume.APIController
         [HttpPut("{id}")]
         public async Task<IActionResult> PutSkills(int id, SkillsUpdateDTOs skillsUpdateDTOs)
         {
-            var skill = await _context.Skills.FindAsync(id);
-            if (id != skillsUpdateDTOs.skill_id)
-            {
-                return BadRequest();
-            }
+            var skill = await _context.Skills.Where(c => c.info_id == id && c.skill_id == skillsUpdateDTOs.skill_id).FirstOrDefaultAsync();
+           
             if (skill == null)
             {
                 throw new Exception($"Skills{id} is not found");

@@ -10,6 +10,7 @@ using Resume.DTOs.ReferencesDTOs;
 using Resume.Data;
 using Resume.Models;
 using Resume.Helpers;
+using Resume.DTOs.ProjectsDTOs;
 
 namespace Resume.APIController
 {
@@ -52,15 +53,15 @@ namespace Resume.APIController
             {
                 return NotFound();
             }
-            var references = await _context.Reference.FindAsync(id);
+            var references = await _context.Reference.Where(c => c.info_id == id).ToListAsync();
 
             if (references == null)
             {
                 return NotFound();
             }
-            var returnRef = _mapper.Map<ReferencesReadDTOs>(references);
+            var returnRef = _mapper.Map<List<ReferencesReadDTOs>>(references);
 
-            return returnRef;
+            return Ok(returnRef);
         }
 
         // PUT: api/References/5
@@ -68,11 +69,8 @@ namespace Resume.APIController
         [HttpPut("{id}")]
         public async Task<IActionResult> PutReferences(int id, ReferencesUpdateDTOs referencesUpdateDTOs)
         {
-            var Ref = await _context.Reference.FindAsync(id);
-            if (id != referencesUpdateDTOs.ref_id)
-            {
-                return BadRequest();
-            }
+            var Ref = await _context.Reference.Where(c => c.info_id == id && c.ref_id == referencesUpdateDTOs.ref_id).FirstOrDefaultAsync();
+           
             if (Ref == null)
             {
                 throw new Exception($"Reference {id} is not found");

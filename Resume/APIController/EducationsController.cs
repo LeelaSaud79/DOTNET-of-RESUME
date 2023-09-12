@@ -49,14 +49,14 @@ namespace Resume.APIController
           {
               return NotFound();
           }
-            var info = await _context.Education.FindAsync(id);
+            var info = await _context.Education.Where(c => c.info_id == id).ToListAsync();
 
             if (info == null)
             {
                 return NotFound();
             }
-            var returnuser = _mapper.Map<EducationsReadDTOs>(info);
-            return returnuser;
+            var returnuser = _mapper.Map<List<EducationsReadDTOs>>(info);
+            return Ok(returnuser);
         }
 
         // PUT: api/Educations/5
@@ -64,11 +64,8 @@ namespace Resume.APIController
         [HttpPut("{id}")]
         public async Task<IActionResult> PutEducations(int id, EducationsUpdateDTOs educationsUpdateDTOs)
         {
-            var edu = await _context.Education.FindAsync(id);
-            if (id != educationsUpdateDTOs.eid)
-            {
-                return BadRequest();
-            }
+            var edu = await _context.Education.Where(c => c.info_id == id && c.eid == educationsUpdateDTOs.eid).FirstOrDefaultAsync();
+            
             if (edu == null)
             {
                 throw new Exception("$Education{id} is not found.");
