@@ -11,6 +11,8 @@ using Resume.Data;
 using Resume.Models;
 using Resume.Helpers;
 using Resume.DTOs.ProjectsDTOs;
+using Resume.Repositories;
+using Resume.DTOs.EducationsDTOs;
 
 namespace Resume.APIController
 {
@@ -21,23 +23,20 @@ namespace Resume.APIController
     {
         private readonly ResumeContext _context;
         private readonly IMapper _mapper;
+        private readonly IGenericRepos _iGenericRepos;
 
-        public ReferencesController(ResumeContext context, IMapper mapper)
+        public ReferencesController(ResumeContext context, IMapper mapper, IGenericRepos iGenericRepos)
         {
             _context = context;
             _mapper = mapper;
+            _iGenericRepos = iGenericRepos;
         }
 
         // GET: api/References
         [HttpGet]
         public async Task<ActionResult<List<ReferencesReadDTOs>>> GetReference()
         {
-            var references = await _context.Reference.ToListAsync();
-
-            if (references == null || references.Count == 0)
-            {
-                return NotFound();
-            }
+            var references = await _iGenericRepos.GetAll<References>();
 
             var records = _mapper.Map<List<ReferencesReadDTOs>>(references);
 
@@ -49,40 +48,46 @@ namespace Resume.APIController
         [HttpGet("{id}")]
         public async Task<ActionResult<ReferencesReadDTOs>> GetReferences(int id)
         {
-            if (_context.Reference == null)
+            var info = await _iGenericRepos.GetByUserId<References>(userData => userData.info_id == id);
+            if (info == null)
             {
                 return NotFound();
             }
-            var references = await _context.Reference.Where(c => c.info_id == id).ToListAsync();
-
-            if (references == null)
-            {
-                return NotFound();
-            }
-            var returnRef = _mapper.Map<List<ReferencesReadDTOs>>(references);
+            
+            var returnRef = _mapper.Map<List<ReferencesReadDTOs>>(info);
 
             return Ok(returnRef);
         }
+       
+
+
 
         // PUT: api/References/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutReferences(int id, ReferencesUpdateDTOs referencesUpdateDTOs)
         {
-            var Ref = await _context.Reference.Where(c => c.info_id == id && c.ref_id == referencesUpdateDTOs.ref_id).FirstOrDefaultAsync();
-           
-            if (Ref == null)
+            var info = await _iGenericRepos.GetById<References>(id);
+
+            if (id != referencesUpdateDTOs.ref_id)
+                {
+                return BadRequest();
+            }
+            if(info  == null)
             {
                 throw new Exception($"Reference {id} is not found");
             }
 
-            _mapper.Map(referencesUpdateDTOs, Ref);
-            _context.Reference.Update(Ref);
-            await _context.SaveChangesAsync();
+            _mapper.Map(referencesUpdateDTOs, info);
+            _context.Reference.Update(info);
 
-            var refReadDTO = _mapper.Map<ReferencesUpdateDTOs>(Ref);
+            info = await _iGenericRepos.Update<References>(id, info);
+            var refReadDTO = _mapper.Map<ReferencesUpdateDTOs>(info);
             return Ok(refReadDTO);
         }
+       
+        
+
             
 
         // POST: api/References
@@ -94,9 +99,11 @@ namespace Resume.APIController
           {
               return BadRequest("Entity set 'ResumeContext.Reference'  is null.");
           }
+      
             var refEntity = _mapper.Map<References>(references);
+            await _iGenericRepos.Create<References>(refEntity);
             _context.Reference.Add(refEntity);
-            await _context.SaveChangesAsync();
+           
 
             return CreatedAtAction("GetReferences", new { id = refEntity.ref_id }, refEntity);
         }
@@ -105,20 +112,13 @@ namespace Resume.APIController
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteReferences(int id)
         {
-            if (_context.Reference == null)
+            var inform = await _iGenericRepos.Delete<References>(id);
+            if (inform == null)
             {
                 return NotFound();
             }
-            var references = await _context.Reference.FindAsync(id);
-            if (references == null)
-            {
-                return NotFound();
-            }
-
-            _context.Reference.Remove(references);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+          
+            return BadRequest();
         }
 
         private bool ReferencesExists(int id)

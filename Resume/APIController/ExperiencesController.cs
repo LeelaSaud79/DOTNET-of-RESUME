@@ -10,7 +10,9 @@ using Resume.DTOs.ExpereincesDTOs;
 using Resume.Data;
 using Resume.Models;
 using Resume.Helpers;
-
+using Resume.Repositories;
+using Resume.DTOs.InfoesDTOs;
+using Resume.DTOs.CertificationsDTOs;
 
 namespace Resume.APIController
 {
@@ -21,64 +23,68 @@ namespace Resume.APIController
     {
         private readonly ResumeContext _context;
         private readonly IMapper _mapper;
-
-        public ExperiencesController(ResumeContext context, IMapper mapper)
+        private readonly IGenericRepos _genericRepos;
+        public ExperiencesController(ResumeContext context, IMapper mapper, IGenericRepos genericRepos)
         {
             _context = context;
             _mapper = mapper;
+            _genericRepos = genericRepos;
         }
 
         // GET: api/Experiences
         [HttpGet]
         public async Task<ActionResult<List<ExperiencesReadDTOs>>> GetExperience()
         {
-            var Exp = await _context.Experience.ToListAsync();
-          if (Exp == null)
-          {
-              return NotFound();
-          }
-            var records = _mapper.Map<List<ExperiencesReadDTOs>>(Exp);
-            return records;
+
+            var infos = await _genericRepos.GetAll<Experience>();
+            var retunInfos = _mapper.Map<List<ExperiencesReadDTOs>>(infos);
+            return Ok(retunInfos);
         }
+        
+
 
         // GET: api/Experiences/5
         [HttpGet("{id}")]
         public async Task<ActionResult<ExperiencesReadDTOs>> GetExperience(int id)
         {
-            if (_context.Experience == null) 
+            var info = await _genericRepos.GetByUserId<Experience>(userData => userData.info_id == id);
+            if (info == null) 
           {
               return NotFound();
           }
-            var experience = await _context.Experience.Where(c => c.info_id == id).ToListAsync();
-
-            if (experience == null)
-            {
-                return NotFound();
-            }
-            var returnRead = _mapper.Map<List<ExperiencesReadDTOs>>(experience);
+           
+            var returnRead = _mapper.Map<List<ExperiencesReadDTOs>>(info);
 
             return Ok( returnRead);
         }
+
+       
+
 
         // PUT: api/Experiences/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult>PutExperience(int id, ExperiencesUpdateDTOs experiencesUpdateDTOs)
         {
-            var exp = await _context.Experience.Where(c => c.info_id == id && c.id == experiencesUpdateDTOs.id).FirstOrDefaultAsync();
-           
-            if (exp == null)
+            var info = await _genericRepos.GetById<Experience>(id);
+            if (id != experiencesUpdateDTOs.id)
+            {
+                return BadRequest();
+            }
+
+            if (info == null)
             {
                 throw new Exception($"Experience{id}is not found");
 
             }
-            _mapper.Map(experiencesUpdateDTOs, exp);
-            _context.Experience.Update(exp);
-            await _context.SaveChangesAsync();
-            var expReadDTO = _mapper.Map<ExperiencesUpdateDTOs>(exp);
+            _mapper.Map(experiencesUpdateDTOs, info);
+            _context.Experience.Update(info);
+            info = await _genericRepos.Update<Experience>(id, info);
+
+            var expReadDTO = _mapper.Map<ExperiencesUpdateDTOs>(info);
             return Ok(expReadDTO);
         }
-
+       
 
         // POST: api/Experiences
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -91,30 +97,24 @@ namespace Resume.APIController
             }
             var expCreateDTO = _mapper.Map<Experience>(exp);
 
-            _context.Experience.Add(expCreateDTO);
-            await _context.SaveChangesAsync();
+
+            await _genericRepos.Create<Experience>(expCreateDTO);
 
             return CreatedAtAction("GetExperience", new { id = expCreateDTO.id }, expCreateDTO);
         }
+        
+        
 
         // DELETE: api/Experiences/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteExperience(int id)
+        public async Task<IActionResult> DeleteExperiences(int id)
         {
-            if (_context.Experience == null)
+            var exp = await _genericRepos.Delete<Experience>(id);
+            if (exp == null)
             {
                 return NotFound();
             }
-            var experience = await _context.Experience.FindAsync(id);
-            if (experience == null)
-            {
-                return NotFound();
-            }
-
-            _context.Experience.Remove(experience);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return Ok("Deleted");
         }
 
         private bool ExperienceExists(int id)

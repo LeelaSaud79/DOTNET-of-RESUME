@@ -6,61 +6,84 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using Resume.Data;
 using Resume.DTOs.InfoesDTOs;
 using Resume.Helpers;
 using Resume.Models;
+using Resume.Repositories;
+
 namespace Resume.APIController
 {
-    [APIAuthKey]
     [Route("api/[controller]")]
     [ApiController]
     public class InfoesController : ControllerBase
     {
         private readonly IMapper _mapper;
-        private readonly ResumeContext _context;
+        private readonly IGenericRepos _genericRepos;
+        private const string ApiUsername = "UserID";
+        private const string ApiPassword = "Password";
 
-        public InfoesController(IMapper mapper, ResumeContext context)
+        public InfoesController(IMapper mapper, IGenericRepos genericRepos)
         {
             _mapper = mapper;
-            _context = context;
-        }
+            _genericRepos = genericRepos;
+            
+    }
 
+        [HttpGet]
+        [Route("~/api/login")]
+        public async Task<ActionResult<Info>> GetLogin()
+        {
+            if ((!HttpContext.Request.Headers.TryGetValue(ApiUsername, out var Email)) ||
+                 (!HttpContext.Request.Headers.TryGetValue(ApiPassword, out var Password)))
+            {
+                return BadRequest("Both Email and Password are required");
+            }
+            else
+            {
+                var userId = await _genericRepos.Login<Info>(user => user.email == Email.ToString());
+
+                if (userId == null)
+                {
+                    return NotFound("Invalid Email or Password");
+                }
+                if (userId.password == Password.ToString())
+                {
+                    var record = _mapper.Map<InfoesReadDTOs>(userId);
+                    return Ok(record);
+                }
+                else
+                {
+                    return NotFound("Incorrect Password");
+                }
+            }
+        }
+           
         // GET: api/Infoes
         [HttpGet]
         public async Task<ActionResult<List<InfoesReadDTOs>>> GetInfo()
         {
-            var info = await _context.Info.ToListAsync();
-
-            if (info == null || info.Count == 0)
-            {
-                return NotFound();
-            }
-
-            var records = _mapper.Map<List<InfoesReadDTOs>>(info);
-            return records;
+            var infos = await _genericRepos.GetAll<Info>();
+            var retunInfos = _mapper.Map<List<InfoesReadDTOs>>(infos);
+            return Ok(retunInfos);
         }
-
-
 
         // GET: api/Infoes/5
         [HttpGet("{id}")]
         public async Task<ActionResult<InfoesReadDTOs>> GetInfo(int id)
         {
-            if (_context.Info == null)
-            {
-                return NotFound();
-            }
-            var info = await _context.Info.FindAsync(id);
+            
+            var info = await _genericRepos.GetByUserId<Info>(userData => userData.info_id == id);
 
             if (info == null)
             {
                 return NotFound();
             }
 
-            var returnuser = _mapper.Map<InfoesReadDTOs>(info);
+            var returnInfo = _mapper.Map<List<InfoesReadDTOs>>(info);
 
-            return returnuser;
+            return Ok(returnInfo);
         }
 
 
@@ -70,7 +93,7 @@ namespace Resume.APIController
         [HttpPut("{id}")]
         public async Task<IActionResult> PutInfo(int id, InfoesUpdateDTOs infoesUpdateDTOs)
         {
-            var info = await _context.Info.FindAsync(id);
+            var info = await _genericRepos.GetById<Info>(id);
             if (id != infoesUpdateDTOs.info_id)
             {
                 return BadRequest();
@@ -80,17 +103,13 @@ namespace Resume.APIController
                 throw new Exception($"Information {id} is not found");
             }
             _mapper.Map(infoesUpdateDTOs, info);
-            _context.Info.Update(info);
-            await _context.SaveChangesAsync();
+           
+            info = await _genericRepos.Update<Info>(id, info);
 
             var infoReadDTO = _mapper.Map<InfoesUpdateDTOs>(info);
             return Ok(infoReadDTO);
         }
-     
-    
-            
 
-            
         // POST: api/Infoes
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
@@ -101,35 +120,25 @@ namespace Resume.APIController
                 return BadRequest("Entity set 'ResumeContext.Info' is not null.");
           }
             var infoEntity = _mapper.Map<Info>(info);
-            _context.Info.Add(infoEntity);
-            await _context.SaveChangesAsync();
+            //_context.Info.Add(infoEntity);
+            await _genericRepos.Create<Info>(infoEntity);
+            //await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetInfo", new { id = infoEntity.info_id }, infoEntity);
+            return Ok("Created");
         }
 
         // DELETE: api/Infoes/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInfo(int id)
         {
-            if (_context.Info == null)
+            var inform = await _genericRepos.Delete<Info>(id);
+            if (inform == null)
             {
-                return NotFound();
+                return NoContent();
             }
-            var info = await _context.Info.FindAsync(id);
-            if (info == null)
-            {
-                return NotFound();
-            }
-
-            _context.Info.Remove(info);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            
+            return BadRequest();
         }
-
-        private bool InfoExists(int id)
-        {
-            return (_context.Info?.Any(e => e.info_id == id)).GetValueOrDefault();
-        }
+       
     }
 }

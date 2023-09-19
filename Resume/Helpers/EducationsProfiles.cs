@@ -9,7 +9,7 @@ namespace Resume.Helpers
     {
         public EducationsProfiles()
         {
-            CreateMap<Educations,EducationsReadDTOs >();
+            CreateMap<Educations, EducationsReadDTOs>();
             CreateMap<EducationsCreateDTOs, Educations>();
             CreateMap<EducationsUpdateDTOs, Educations>();
             CreateMap<Educations, EducationsUpdateDTOs>();

@@ -10,6 +10,10 @@ using AutoMapper;
 using Resume.DTOs.CertificationsDTOs;
 using Resume.Models;
 using Resume.Helpers;
+using Resume.DTOs.InfoesDTOs;
+using Resume.Repositories;
+using Resume.DTOs.EducationsDTOs;
+using Resume.DTOs.ProjectsDTOs;
 
 namespace Resume.APIController
 {
@@ -19,67 +23,66 @@ namespace Resume.APIController
     public class CertificationsController : ControllerBase
     {
         private readonly ResumeContext _context;
-        private readonly IMapper _mapper;   
+        private readonly IMapper _mapper;
+        private readonly IGenericRepos _genericRepos;
 
-        public CertificationsController(ResumeContext context, IMapper mapper)
+        public CertificationsController(ResumeContext context, IMapper mapper, IGenericRepos genericRepos)
         {
             _context = context;
             _mapper = mapper;
+            _genericRepos = genericRepos;
         }
 
         // GET: api/Certifications
         [HttpGet]
-        [HttpGet]
         public async Task<ActionResult<List<CertificationsReadDTOs>>> GetCertifications()
         {
-            var certification = await _context.Certifications.ToListAsync();
-            if (certification == null || certification.Count == 0)
-            {
-                return NotFound();
-            }
+            var certification = await _genericRepos.GetAll<Certification>();
+            
             var records = _mapper.Map<List<CertificationsReadDTOs>>(certification);
-            return records;
+            return Ok(records);
         }
+
+       
 
 
         // GET: api/Certifications/5
         [HttpGet("{id}")]
         public async Task<ActionResult<List<CertificationsReadDTOs>>> GetCertification(int id)
         {
-            if (_context.Certifications == null)
-            {
-                return NotFound();
-            }
-            var certification = await _context.Certifications.Where(c => c.info_id == id).ToListAsync();
+            var info = await _genericRepos.GetByUserId<Certification>(userData => userData.info_id == id);
+            
 
-            if (certification == null)
+            if (info == null)
             {
                 return NotFound();
             }
-            var returnCet = _mapper.Map<List<CertificationsReadDTOs>>(certification);
+            var returnCet = _mapper.Map<List<CertificationsReadDTOs>>(info);
 
             return Ok(returnCet);
         }
+        
+
+
 
         // PUT: api/Certifications/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCertification(int id, CertificationsUpdateDTOs certificationsUpdateDTOs)
         {
-            var certification = await _context.Certifications.Where(c => c.info_id == id && c.cid == certificationsUpdateDTOs.cid).FirstOrDefaultAsync();
+            var info = await _genericRepos.GetById<Certification>(id);
 
-
-            if (certification == null)
+            if (info == null)
             {
                 return NotFound($"Certification with ID {id} not found.");
             }
 
 
-            _mapper.Map(certificationsUpdateDTOs, certification);
-            _context.Certifications.Update(certification);
-            await _context.SaveChangesAsync();
+            _mapper.Map(certificationsUpdateDTOs, info);
+            _context.Certifications.Update(info);
+            info = await _genericRepos.Update<Certification>(id, info);
 
-            var certificationReadDTO = _mapper.Map<CertificationsReadDTOs>(certification);
+            var certificationReadDTO = _mapper.Map<CertificationsReadDTOs>(info);
             return Ok(certificationReadDTO);
         }
 
@@ -87,38 +90,34 @@ namespace Resume.APIController
         // POST: api/Certifications
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Certification>> PostCertificationsCreateDTOs(CertificationsCreateDTOs certification)
+        public async Task<ActionResult<Certification>> PostCertificationsCreateDTOs(CertificationsCreateDTOs cert)
         {
-          if (certification == null)
+          if (cert == null)
           {
               return BadRequest("Entity set 'ResumeContext.Certifications'  is null.");
           }
-          var cerEntity = _mapper.Map<Certification>(certification);
+          var cerEntity = _mapper.Map<Certification>(cert);
+          await _genericRepos.Create<Certification>(cerEntity);
             _context.Certifications.Add(cerEntity);
-            await _context.SaveChangesAsync();
+       
 
             return CreatedAtAction("GetCertification", new { id = cerEntity.cid }, cerEntity);
         }
+
 
         // DELETE: api/Certifications/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCertification(int id)
         {
-            if (_context.Certifications == null)
+            var certificate = await _genericRepos.Delete<Certification>(id);
+            if (certificate == null)
             {
                 return NotFound();
             }
-            var certification = await _context.Certifications.FindAsync(id);
-            if (certification == null)
-            {
-                return NotFound();
-            }
-
-            _context.Certifications.Remove(certification);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return Ok("Deleted");
         }
+
+
 
         private bool CertificationExists(int id)
         {

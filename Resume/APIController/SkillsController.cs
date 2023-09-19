@@ -9,7 +9,9 @@ using Resume.Data;
 using AutoMapper;
 using Resume.DTOs.SkillsDTOs;
 using Resume.Models;
+using Resume.Repositories;
 using Resume.Helpers;
+using Resume.DTOs.ExpereincesDTOs;
 
 namespace Resume.APIController
 {
@@ -20,63 +22,66 @@ namespace Resume.APIController
     {
         private readonly ResumeContext _context;
         private readonly IMapper _mapper;
+        private readonly IGenericRepos _iGenericRepos;
 
-        public SkillsController(ResumeContext context, IMapper mapper)
+        public SkillsController(ResumeContext context, IMapper mapper, IGenericRepos iGenericRepos)
         {
             _mapper = mapper;
             _context = context;
+            _iGenericRepos = iGenericRepos;
         }
 
         // GET: api/Skills
         [HttpGet]
         public async Task<ActionResult<List<SkillsReadDTOs>>> GetSkills()
         {
-            var info = await _context.Skills.ToListAsync();
-          if ( info == null || info.Count == 0)
-          {
-              return NotFound();
-          }
+            var info = await _iGenericRepos.GetAll<Skills>();
+          
           var skillReadDTO = _mapper.Map<List<SkillsReadDTOs>>(info);
-            return skillReadDTO;
+            return Ok(skillReadDTO);
         }
+
 
         // GET: api/Skills/5
         [HttpGet("{id}")]
         public async Task<ActionResult<SkillsReadDTOs>> GetSkills(int id)
         {
-          if (_context.Skills == null)
-          {
-              return NotFound();
-          }
-            var skills = await _context.Skills.Where(c => c.info_id == id).ToListAsync();
-
-            if (skills == null)
+            var info = await _iGenericRepos.GetByUserId<Skills>(userData => userData.info_id == id);
+            if (info == null)
             {
                 return NotFound();
             }
-            var returnuser = _mapper.Map<List<SkillsReadDTOs>>(skills);
 
-            return Ok(returnuser);
+            var returnRead = _mapper.Map<List<SkillsReadDTOs>>(info);
+
+            return Ok(returnRead);
         }
+
 
         // PUT: api/Skills/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutSkills(int id, SkillsUpdateDTOs skillsUpdateDTOs)
         {
-            var skill = await _context.Skills.Where(c => c.info_id == id && c.skill_id == skillsUpdateDTOs.skill_id).FirstOrDefaultAsync();
-           
-            if (skill == null)
+            var info = await _iGenericRepos.GetById<Skills>(id);
+            if (id != skillsUpdateDTOs.skill_id)
             {
-                throw new Exception($"Skills{id} is not found");
+                return BadRequest();
             }
-            _mapper.Map(skillsUpdateDTOs, skill);
-            _context.Skills.Update(skill);
-            await _context.SaveChangesAsync();
-            var skillUpdate = _mapper.Map<SkillsUpdateDTOs, Skills>(skillsUpdateDTOs, skill);
-                return Ok(skillUpdate);
 
-            
+            if (info == null)
+            {
+                throw new Exception($"Experience{id}is not found");
+
+            }
+            _mapper.Map(skillsUpdateDTOs, info);
+            _context.Skills.Update(info);
+            info = await _iGenericRepos.Update<Skills>(id, info);
+
+            var expReadDTO = _mapper.Map<SkillsUpdateDTOs>(info);
+            return Ok(expReadDTO);
+
+
 
         }
 
@@ -92,9 +97,7 @@ namespace Resume.APIController
               return BadRequest("Entity set 'ResumeContext.Skills'  is null.");
           }
             var skillEntity = _mapper.Map<Skills>(skill);
-            _context.Skills.Add(skillEntity);
-            await _context.SaveChangesAsync();
-
+            await _iGenericRepos.Create<Skills>(skillEntity);
             return CreatedAtAction("GetSkills", new { id = skillEntity.skill_id }, skillEntity);
         }
 
@@ -102,20 +105,12 @@ namespace Resume.APIController
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSkills(int id)
         {
-            if (_context.Skills == null)
+            var inform = await _iGenericRepos.Delete<Skills>(id);
+            if (inform == null)
             {
                 return NotFound();
             }
-            var skills = await _context.Skills.FindAsync(id);
-            if (skills == null)
-            {
-                return NotFound();
-            }
-
-            _context.Skills.Remove(skills);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return BadRequest();
         }
 
         private bool SkillsExists(int id)

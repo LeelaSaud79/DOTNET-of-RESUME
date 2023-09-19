@@ -14,7 +14,7 @@ using Resume.DTOs.ReferencesDTOs;
 using Resume.DTOs.ExpereincesDTOs;
 using Resume.DTOs.EducationsDTOs;
 using Resume.DTOs.CertificationsDTOs;
-
+using Resume.Repositories;
 namespace Resume.APIController
 {
     [APIAuthKey]
@@ -24,22 +24,22 @@ namespace Resume.APIController
     {
         private readonly ResumeContext _context;
         private readonly IMapper _mapper;
+        private readonly IGenericRepos _iGenericRepos;
 
-        public ProjectsController(ResumeContext context, IMapper mapper)
+        public ProjectsController(ResumeContext context, IMapper mapper, IGenericRepos iGenericRepos)
         {
             _context = context;
             _mapper = mapper;
+            _iGenericRepos = iGenericRepos;
         }
 
         // GET: api/Projects
         [HttpGet]
         public async Task<ActionResult<List<ProjectsReadDTOs>>> GetProjects()
         {
-            var proj = await _context.Projects.ToListAsync();
-          if (proj == null || proj.Count == 0)
-          {
-              return NotFound();
-          }
+            var proj = await _iGenericRepos.GetAll<Project>();
+          
+          
             var records = _mapper.Map<List<ProjectsReadDTOs>>(proj);
             return records;
         }
@@ -48,38 +48,44 @@ namespace Resume.APIController
         [HttpGet("{id}")]
         public async Task<ActionResult<ProjectsReadDTOs>> GetProject(int id)
         {
-          if (_context.Projects == null)
+            var info = await _iGenericRepos.GetByUserId<Project>(userData => userData.info_id == id);
+            if (info == null)
           {
               return NotFound();
           }
-            var project = await _context.Projects.Where(c => c.info_id == id).ToListAsync();
-
-            if (project == null)
-            {
-                return NotFound();
-            }
-            var returnRead = _mapper.Map<List<ProjectsReadDTOs>>(project);
+            var returnRead = _mapper.Map<List<ProjectsReadDTOs>>(info);
 
             return Ok(returnRead);
         }
+        
+
+
+
 
         // PUT: api/Projects/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProject(int id, ProjectsUpdateDTOs projectsUpdateDTOs)
         {
-            var proj = await _context.Projects.Where(c => c.info_id == id && c.pid == projectsUpdateDTOs.pid).FirstOrDefaultAsync();
-            
-           
-            if (proj == null)
-            {
-                throw new Exception($"Projects{id} is not found");
-            }
-            _mapper.Map(projectsUpdateDTOs, proj);
-            _context.Projects.Update(proj);
-            var projReadDTO = _mapper.Map<ProjectsUpdateDTOs>(proj);
-            return Ok(projReadDTO);
+            var info = await _iGenericRepos.GetById<Project>(id);
 
+
+            if (id != projectsUpdateDTOs.pid)
+
+            {
+                return BadRequest();
+            }
+            if (info == null)
+            {
+                throw new Exception($"Information {id} is not found");
+            }
+            _mapper.Map(projectsUpdateDTOs, info);
+            _context.Projects.Update(info);
+            //_context.Educations.Update(info);
+            info = await _iGenericRepos.Update<Project>(id, info);
+
+            var infoReadDTO = _mapper.Map<ProjectsUpdateDTOs>(info);
+            return Ok(infoReadDTO);
         }
 
         // POST: api/Projects
@@ -91,31 +97,25 @@ namespace Resume.APIController
           {
               return BadRequest("Entity set 'ResumeContext.Projects'  is null.");
           }
-          var proj = _mapper.Map<Project>(project);
-            _context.Projects.Add(proj);
-            await _context.SaveChangesAsync();
+            var projCreateDTO = _mapper.Map<Project>(project);
 
-            return CreatedAtAction("GetProject", new { id = proj.pid }, proj);
+         
+            await _iGenericRepos.Create<Project>(projCreateDTO);
+            _context.Projects.Add(projCreateDTO);
+
+            return CreatedAtAction("GetProject", new { id = projCreateDTO.pid }, projCreateDTO);
         }
 
         // DELETE: api/Projects/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProject(int id)
         {
-            if (_context.Projects == null)
-            {
-                return NotFound();
-            }
-            var project = await _context.Projects.FindAsync(id);
+            var project = await _iGenericRepos.Delete<Project>(id);
             if (project == null)
             {
                 return NotFound();
             }
-
-            _context.Projects.Remove(project);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return Ok("Deleted");
         }
 
         private bool ProjectExists(int id)

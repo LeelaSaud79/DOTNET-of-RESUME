@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol.Plugins;
 using Resume.Models;
 
 namespace Resume.Data
@@ -19,7 +20,8 @@ namespace Resume.Data
 
         public DbSet<Resume.Models.Info> Info { get; set; } = default!;
 
-        public DbSet<Resume.Models.Certification>? Certifications { get; set; }
+        public DbSet<Resume.Models.Certification> Certifications { get; set; } = default!;
+        //public DbSet<Resume.Models.Certification>? Certifications { get; set; }
 
         public DbSet<Resume.Models.Educations> Education { get; set; } = default!;
 
